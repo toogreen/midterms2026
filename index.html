@@ -1,0 +1,1401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f0e6" id="themeColor">
+  <meta name="description" content="An election-night desk for the 2026 US midterms: Senate, House and governor races with live results.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Midterm Desk">
+  <title>The Midterm Desk</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://static01.nyt.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    // Apply a saved theme before first paint to avoid a flash.
+    try {
+      const savedTheme = localStorage.getItem('us-midterms-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.dataset.theme = savedTheme;
+    } catch {}
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f0e6;
+      --surface: #fbf9f3;
+      --surface-2: #efeadd;
+      --ink: #17181c;
+      --ink-soft: #3d3f46;
+      --muted: #75726a;
+      --line: #ddd5c4;
+      --line-strong: #c4baa5;
+      --rule: #17181c;
+      --dem: #2556a6;
+      --dem-soft: #cad7ee;
+      --dem-hold: #90a9d6;
+      --gop: #c8322b;
+      --gop-soft: #f2cbc6;
+      --gop-hold: #e2968f;
+      --oth: #9a7b2f;
+      --oth-soft: #e8dcb8;
+      --flip: #e0a21f;
+      --flip-ink: #3d2b05;
+      --empty: #e5dfd1;
+      --live: #1f9d55;
+      --on-party: #ffffff;
+      --notice-bg: #f6e9c4;
+      --notice-ink: #5e4a14;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --paper: #0e1117; --surface: #151922; --surface-2: #1b202b; --ink: #ede7da; --ink-soft: #c9c4b8; --muted: #8d919b;
+        --line: #272d39; --line-strong: #39404e; --rule: #ede7da;
+        --dem: #5d93ea; --dem-soft: #213458; --dem-hold: #34507f; --gop: #f0625a; --gop-soft: #4c2322; --gop-hold: #87403b;
+        --oth: #d4ad55; --oth-soft: #3d331c; --flip: #f0b93a; --flip-ink: #1f1603; --empty: #20252f; --live: #3fcf7f; --on-party: #0e1117;
+        --notice-bg: #2a2412; --notice-ink: #e8d29a;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #0e1117; --surface: #151922; --surface-2: #1b202b; --ink: #ede7da; --ink-soft: #c9c4b8; --muted: #8d919b;
+      --line: #272d39; --line-strong: #39404e; --rule: #ede7da;
+      --dem: #5d93ea; --dem-soft: #213458; --dem-hold: #34507f; --gop: #f0625a; --gop-soft: #4c2322; --gop-hold: #87403b;
+      --oth: #d4ad55; --oth-soft: #3d331c; --flip: #f0b93a; --flip-ink: #1f1603; --empty: #20252f; --live: #3fcf7f; --on-party: #0e1117;
+      --notice-bg: #2a2412; --notice-ink: #e8d29a;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { scroll-padding-top: 110px; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 'Instrument Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; transition: background .25s ease, color .25s ease; }
+    button, input, select { font: inherit; color: inherit; }
+    a { color: inherit; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+    .serif { font-family: 'Fraunces', Georgia, serif; }
+
+    /* ---- Masthead ---- */
+    .masthead { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); }
+    .masthead-row { max-width: 1240px; margin: 0 auto; height: 62px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+    .brand-mark { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--paper); }
+    .brand-mark svg { width: 17px; height: 17px; }
+    .brand-name { font: italic 600 22px/1 'Fraunces', Georgia, serif; letter-spacing: -.01em; white-space: nowrap; }
+    .brand-name b { font-style: normal; font-weight: 700; }
+    .nav { display: flex; align-items: center; gap: 24px; height: 100%; }
+    .nav button { background: none; border: 0; height: 100%; padding: 0 2px; color: var(--muted); cursor: pointer; position: relative; font-size: 13px; font-weight: 500; }
+    .nav button:hover { color: var(--ink); }
+    .nav button.active { color: var(--ink); font-weight: 700; }
+    .nav button.active::after { content: ''; position: absolute; bottom: -1px; height: 3px; left: 0; right: 0; background: var(--ink); }
+    .tools { display: flex; align-items: center; gap: 10px; }
+    .live-pill { display: flex; align-items: center; gap: 7px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 99px; font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--flip); box-shadow: 0 0 0 3px color-mix(in srgb, var(--flip) 22%, transparent); }
+    .dot.live { background: var(--live); animation: pulse 2s ease-in-out infinite; }
+    .dot.error { background: var(--gop); }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent); } 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--live) 0%, transparent); } }
+    .icon-button { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; background: transparent; cursor: pointer; }
+    .icon-button svg { width: 15px; height: 15px; }
+    .icon-button:hover { background: var(--surface-2); }
+    .language-switch { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--line-strong); border-radius: 99px; }
+    .language-switch button { border: 0; border-radius: 99px; padding: 3px 8px; background: transparent; color: var(--muted); cursor: pointer; font: 500 10px 'IBM Plex Mono', monospace; }
+    .language-switch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+    /* ---- Ticker ---- */
+    .ticker { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); background: var(--surface); overflow: hidden; height: 34px; }
+    .ticker-label { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 0 14px 0 28px; background: var(--ink); color: var(--paper); font: 600 10px 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; position: relative; z-index: 1; }
+    .ticker-label::after { content: ''; position: absolute; right: -10px; top: 0; bottom: 0; width: 10px; background: var(--ink); clip-path: polygon(0 0, 100% 50%, 0 100%); }
+    .ticker-viewport { flex: 1; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 30px, #000 calc(100% - 30px), transparent); }
+    .ticker-track { display: flex; width: max-content; height: 100%; animation: marquee var(--ticker-duration, 70s) linear infinite; }
+    .ticker:hover .ticker-track { animation-play-state: paused; }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+    .tick { display: flex; align-items: center; gap: 8px; padding: 0 22px; font-size: 12px; white-space: nowrap; border-right: 1px solid var(--line); }
+    .tick b { font-weight: 600; }
+    .tick time { color: var(--muted); font: 10px 'IBM Plex Mono', monospace; }
+    .tick-dot { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
+    .flip-chip { padding: 1px 5px; border-radius: 2px; background: var(--flip); color: var(--flip-ink); font: 600 9px 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
+
+    /* ---- Layout ---- */
+    main { max-width: 1240px; margin: 0 auto; padding: 34px 28px 56px; }
+    .kicker { display: flex; align-items: center; gap: 10px; font: 500 10.5px 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .kicker::before { content: ''; width: 18px; height: 2px; background: var(--gop); box-shadow: 0 -4px 0 var(--dem); }
+
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: end; padding-bottom: 26px; border-bottom: 3px double var(--rule); margin-bottom: 18px; }
+    h1 { font: 500 clamp(36px, 5.6vw, 64px)/1.02 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 72; letter-spacing: -.02em; margin: 14px 0 12px; max-width: 16ch; text-wrap: balance; }
+    h1 em { font-style: italic; font-weight: 400; }
+    h1 .d { color: var(--dem); }
+    h1 .r { color: var(--gop); }
+    .dek { margin: 0; max-width: 62ch; color: var(--ink-soft); font-size: 15px; }
+    .ballot-stub { display: grid; grid-template-columns: auto auto; gap: 0 16px; align-items: center; padding: 14px 18px; border: 1.5px dashed var(--line-strong); border-radius: 3px; background: var(--surface); }
+    .stub-day { grid-row: span 2; font: 600 58px/.9 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 72; }
+    .stub-month { font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: .14em; text-transform: uppercase; }
+    .stub-status { max-width: 210px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+
+    .notice { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 22px; background: var(--notice-bg); color: var(--notice-ink); border-radius: 3px; font-size: 12px; }
+    .notice strong { font-weight: 700; }
+    .notice a { color: inherit; font-weight: 700; }
+    .notice button { background: transparent; border: 0; color: inherit; cursor: pointer; font-weight: 700; white-space: nowrap; }
+    .notice.replay { background: var(--dem-soft); color: var(--ink); }
+
+    .section { margin-top: 30px; }
+    .section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-top: 10px; border-top: 3px solid var(--rule); margin-bottom: 14px; }
+    .section-title { margin: 3px 0 0; font: 600 26px/1.1 'Fraunces', Georgia, serif; letter-spacing: -.015em; }
+    .section-caption { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--rule); border-radius: 2px; }
+    .panel-head { padding: 14px 18px 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; border-bottom: 1px solid var(--line); }
+    .panel-title { margin: 0; font: 600 19px/1.15 'Fraunces', Georgia, serif; letter-spacing: -.01em; }
+    .panel-caption { margin: 3px 0 0; font-size: 11px; color: var(--muted); }
+
+    .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .updated { color: var(--muted); font: 10.5px 'IBM Plex Mono', monospace; white-space: nowrap; }
+    .button { min-height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--line-strong); border-radius: 99px; background: transparent; cursor: pointer; text-decoration: none; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .button:hover { background: var(--surface-2); }
+    .button:disabled { opacity: .55; cursor: wait; }
+    .button svg { width: 13px; height: 13px; }
+    .button.spinning svg { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .segmented { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--line-strong); border-radius: 99px; }
+    .segmented button { border: 0; border-radius: 99px; padding: 4px 10px; background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 600; }
+    .segmented button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+    .select { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 99px; padding: 6px 12px; font-size: 11px; cursor: pointer; }
+
+    /* ---- Hemicycles ---- */
+    .chambers { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .chamber { padding: 16px 18px 14px; }
+    .chamber-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .chamber-head h3 { margin: 0; font: 600 19px 'Fraunces', Georgia, serif; }
+    .chamber-head span { color: var(--muted); font: 10.5px 'IBM Plex Mono', monospace; }
+    .hemicycle { position: relative; margin: 10px auto 0; max-width: 430px; }
+    .hemicycle svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .seat { transition: fill .5s ease; }
+    .seat.d-hold { fill: var(--dem-hold); } .seat.d-won { fill: var(--dem); }
+    .seat.o-won { fill: var(--oth); } .seat.empty { fill: var(--empty); }
+    .seat.r-won { fill: var(--gop); } .seat.r-hold { fill: var(--gop-hold); }
+    .majority-tick { stroke: var(--ink); stroke-width: 1.2; }
+    .majority-label { font: 500 5.5px 'IBM Plex Mono', monospace; fill: var(--muted); }
+    .hemicycle-score { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: baseline; gap: 10px; pointer-events: none; }
+    .hemicycle-score b { font: 600 clamp(26px, 3.6vw, 38px)/1 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 60; letter-spacing: -.02em; }
+    .hemicycle-score .d { color: var(--dem); } .hemicycle-score .r { color: var(--gop); }
+    .hemicycle-score i { width: 1px; height: 26px; background: var(--line-strong); align-self: center; }
+    .chamber-foot { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--muted); }
+    .chamber-foot .d { color: var(--dem); font-weight: 600; } .chamber-foot .r { color: var(--gop); font-weight: 600; }
+    .chamber-note { margin: 6px 0 0; text-align: center; color: var(--muted); font-size: 11px; }
+    .seat-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; margin-top: 12px; color: var(--muted); font-size: 11px; }
+    .seat-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; }
+
+    /* ---- Stat strip ---- */
+    .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 14px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+    .stat { padding: 14px 18px; }
+    .stat + .stat { border-left: 1px solid var(--line); }
+    .stat-label { font: 500 10px 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .stat-value { margin: 6px 0 3px; font: 500 30px/1 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 36; letter-spacing: -.02em; }
+    .stat-value small { font: 500 13px 'Instrument Sans', sans-serif; color: var(--muted); letter-spacing: 0; }
+    .stat-value .d { color: var(--dem); } .stat-value .r { color: var(--gop); } .stat-value .sep { color: var(--line-strong); margin: 0 3px; }
+    .stat-detail { color: var(--muted); font-size: 11px; }
+    .disclosure { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; color: var(--muted); font-size: 11px; }
+
+    /* ---- Key races ---- */
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.42fr) minmax(300px, .88fr); gap: 14px; align-items: start; }
+    .key-races { padding: 2px 18px 10px; }
+    .key-race { display: grid; grid-template-columns: minmax(104px, .85fr) minmax(0, 2.3fr) 72px; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .key-race:last-child { border: 0; }
+    .key-race-name { font: 600 15px/1.2 'Fraunces', Georgia, serif; }
+    .key-race-name a { text-decoration: none; }
+    .key-race-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .rating { display: inline-block; margin-top: 4px; padding: 1px 6px; border-radius: 2px; font: 500 9px 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); }
+    .rating.tossup { background: var(--oth-soft); color: var(--oth); }
+    .rating.lean-dem, .rating.likely-dem, .rating.solid-dem { background: var(--dem-soft); color: var(--dem); }
+    .rating.lean-rep, .rating.likely-rep, .rating.solid-rep { background: var(--gop-soft); color: var(--gop); }
+    .matchup-names { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; margin-bottom: 5px; }
+    .matchup-names span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .matchup-names b { font: 500 11px 'IBM Plex Mono', monospace; }
+    .matchup-names .winner { font-weight: 700; }
+    .matchup-names .winner::after { content: ' ✓'; }
+    .tug { position: relative; display: flex; height: 8px; background: var(--empty); border-radius: 1px; overflow: hidden; }
+    .tug span { height: 100%; transition: width .5s ease; }
+    .tug::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1.5px; background: var(--ink); transform: translateX(-50%); }
+    .key-race-status { text-align: right; font: 600 14px/1.15 'Fraunces', Georgia, serif; }
+    .key-race-status small { display: block; color: var(--muted); font: 10px 'IBM Plex Mono', monospace; }
+    .key-race-status .flip-chip { display: inline-block; margin-top: 3px; }
+    .placeholder { padding: 24px 18px 12px; color: var(--muted); font-size: 12px; text-align: center; }
+    .ballot-states { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 0 18px 20px; }
+    .ballot-states span { border: 1px solid var(--line-strong); border-radius: 99px; padding: 3px 10px; font-size: 11px; color: var(--ink-soft); }
+
+    /* ---- Map & timeline ---- */
+    .right-stack { display: grid; gap: 14px; }
+    .map-art { display: block; width: 100%; height: auto; padding: 12px 16px 2px; }
+    .tile rect { fill: var(--empty); transition: fill .4s ease, opacity .15s; }
+    .tile text { font: 600 8.5px 'Instrument Sans', sans-serif; fill: var(--muted); pointer-events: none; opacity: .6; }
+    .tile.has-race { cursor: pointer; }
+    .tile.has-race rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
+    .tile.has-race text { fill: var(--ink); opacity: 1; }
+    .tile.has-race:hover rect, .tile.has-race:focus rect { stroke: var(--ink); stroke-width: 1.6; }
+    .tile.has-race:focus { outline: none; }
+    .tile.lead-DEM rect { fill: var(--dem-soft); stroke: var(--dem); }
+    .tile.lead-GOP rect { fill: var(--gop-soft); stroke: var(--gop); }
+    .tile.lead-OTH rect { fill: var(--oth-soft); stroke: var(--oth); }
+    .tile.call-DEM rect { fill: var(--dem); stroke: none; }
+    .tile.call-GOP rect { fill: var(--gop); stroke: none; }
+    .tile.call-OTH rect { fill: var(--oth); stroke: none; }
+    .tile[class*="call-"] text { fill: var(--on-party); }
+    .tile .flip-mark { fill: var(--flip); stroke: var(--surface); stroke-width: 1; }
+    .map-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 4px 18px 14px; color: var(--muted); font-size: 10.5px; }
+    .map-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+    .timeline { list-style: none; margin: 0; padding: 4px 18px 10px; }
+    .timeline li { position: relative; display: grid; grid-template-columns: 62px 1fr; gap: 12px; padding: 8px 0 8px; }
+    .timeline li::before { content: ''; position: absolute; left: 71px; top: 0; bottom: 0; width: 1px; background: var(--line); }
+    .timeline li::after { content: ''; position: absolute; left: 67px; top: 13px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--line-strong); }
+    .timeline li.closed::after { background: var(--ink); border-color: var(--ink); }
+    .timeline li.next::after { background: var(--flip); border-color: var(--flip); box-shadow: 0 0 0 4px color-mix(in srgb, var(--flip) 25%, transparent); }
+    .timeline time { font: 500 11px 'IBM Plex Mono', monospace; text-align: right; padding-top: 1px; }
+    .timeline div { padding-left: 14px; }
+    .timeline strong { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+    .timeline p { margin: 1px 0 0; color: var(--muted); font-size: 10.5px; }
+
+    /* ---- Race table ---- */
+    .table-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .searchbox { position: relative; }
+    .searchbox svg { position: absolute; width: 14px; height: 14px; left: 11px; top: 8px; color: var(--muted); }
+    .searchbox input { width: 210px; padding: 6px 12px 6px 31px; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface); font-size: 11px; outline: none; }
+    .searchbox input:focus { border-color: var(--ink); }
+    .race-table { width: 100%; border-collapse: collapse; }
+    .race-table th { text-align: left; padding: 9px 18px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font: 500 9.5px 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--rule); }
+    .race-table td { padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: 12px; vertical-align: top; }
+    .race-table tbody tr:hover td { background: var(--surface-2); }
+    .race-name { font: 600 14px/1.2 'Fraunces', Georgia, serif; }
+    .race-name a { text-decoration: none; }
+    .race-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .race-sub { color: var(--muted); font-size: 10.5px; margin-top: 2px; }
+    .num { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; }
+    .party-tag { display: inline-flex; align-items: center; gap: 6px; }
+    .party-tag i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+    .status { display: inline-block; border-radius: 2px; padding: 2px 7px; font: 500 9.5px 'IBM Plex Mono', monospace; letter-spacing: .05em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+    .status.called-dem { background: var(--dem); color: var(--on-party); }
+    .status.called-gop { background: var(--gop); color: var(--on-party); }
+    .status.called-oth { background: var(--oth); color: var(--on-party); }
+    .status + .flip-chip { margin-left: 4px; }
+    .table-more { display: flex; margin: 12px auto; }
+    .table-foot { display: flex; justify-content: space-between; gap: 10px; padding: 10px 18px 12px; color: var(--muted); font-size: 10.5px; }
+    .empty { text-align: center; color: var(--muted); padding: 26px !important; }
+
+    /* ---- History ---- */
+    .chart-wrap { padding: 14px 18px 12px; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; padding: 0 0 8px; }
+    .legend span { display: flex; align-items: center; gap: 6px; color: var(--ink-soft); font-size: 11px; }
+    .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
+    .chart { display: block; width: 100%; max-width: 780px; height: auto; margin: 0 auto; overflow: visible; }
+    .chart text { font: 10px 'IBM Plex Mono', monospace; fill: var(--muted); }
+    .chart .year { font: 600 13px 'Fraunces', Georgia, serif; fill: var(--ink); }
+    .chart .bar-label { font: 600 10px 'Instrument Sans', sans-serif; fill: var(--on-party); }
+    .chart .gridline { stroke: var(--line); stroke-width: 1; }
+    .chart .axisline { stroke: var(--rule); stroke-width: 1; }
+    .chart .majority { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; opacity: .6; }
+    .chart-note { margin: 6px 0 0; color: var(--muted); font-size: 10.5px; }
+
+    .ad-slot { margin-top: 36px; }
+    .footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 24px; padding-top: 12px; border-top: 3px double var(--rule); color: var(--muted); font-size: 11px; }
+    .footer a { color: var(--ink); text-decoration: none; font-weight: 600; }
+    .footer-brand { font: italic 600 15px 'Fraunces', Georgia, serif; color: var(--ink); }
+    .toast { position: fixed; z-index: 20; bottom: 22px; left: 50%; transform: translate(-50%, 15px); opacity: 0; pointer-events: none; background: var(--ink); color: var(--paper); padding: 10px 15px; border-radius: 3px; font-size: 12px; transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 900px) {
+      .masthead-row, .ticker-label { padding-left: 20px; }
+      .masthead-row { padding-right: 20px; }
+      main { padding: 26px 20px 40px; }
+      .hero { grid-template-columns: 1fr; gap: 18px; }
+      .ballot-stub { justify-self: start; }
+      .content-grid { grid-template-columns: 1fr; }
+      .right-stack { grid-template-columns: 1fr 1fr; align-items: start; }
+      .stat-strip { grid-template-columns: repeat(2, 1fr); }
+      .stat:nth-child(3) { border-left: 0; }
+      .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+    }
+    @media (max-width: 640px) {
+      .masthead-row { height: 54px; padding: 0 14px; gap: 8px; }
+      .nav { display: none; }
+      .brand-name { font-size: 19px; }
+      .live-pill { font-size: 0; padding: 7px; gap: 0; }
+      .ticker-label { padding: 0 10px 0 14px; }
+      main { padding: 20px 16px 32px; }
+      .dek { font-size: 14px; }
+      .chambers { grid-template-columns: 1fr; }
+      .section-head { flex-direction: column; align-items: flex-start; }
+      .panel-head { flex-direction: column; padding-left: 14px; padding-right: 14px; }
+      .right-stack { grid-template-columns: 1fr; }
+      .key-races { padding: 2px 14px 8px; }
+      .key-race { grid-template-columns: 1fr auto; gap: 6px 10px; }
+      .key-race-matchup { grid-column: 1 / -1; grid-row: 2; }
+      .notice { align-items: flex-start; }
+      .table-controls { width: 100%; }
+      .searchbox { flex: 1 1 100%; }
+      .searchbox input { width: 100%; }
+      .race-table th, .race-table td { padding-left: 10px; padding-right: 10px; }
+      .race-table th:nth-child(3), .race-table td:nth-child(3) { display: none; }
+      .table-foot, .disclosure, .footer { flex-direction: column; align-items: flex-start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation: none !important; }
+      .ticker-viewport { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-row">
+      <a class="brand" href="#top" aria-label="The Midterm Desk home" data-i18n-aria="brandHome">
+        <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v2M7.5 10.5a4.5 4.5 0 0 1 9 0M6 10.5h12M7 10.5v6M10.3 10.5v6M13.7 10.5v6M17 10.5v6M5 16.5h14M4 19.5h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="brand-name" id="brandName">The Midterm <b>Desk</b></span>
+      </a>
+      <nav class="nav" aria-label="Main navigation" data-i18n-aria="mainNavigation">
+        <button class="active" data-view="top" data-i18n="navOverview">Overview</button>
+        <button data-view="raceSection" data-i18n="navRaces">Races</button>
+        <button data-view="mapSection" data-i18n="navMap">Map</button>
+        <button data-view="historySection" data-i18n="navHistory">History</button>
+      </nav>
+      <div class="tools">
+        <span class="live-pill"><i class="dot" id="headerDot"></i><span id="headerFeedStatus">Connecting</span></span>
+        <button type="button" class="icon-button" id="themeToggle" aria-label="Switch to dark mode"></button>
+        <div class="language-switch" role="group" aria-label="Language" data-i18n-aria="languageSelector"><button type="button" data-language="en" aria-pressed="true">EN</button><button type="button" data-language="fr" aria-pressed="false">FR</button></div>
+      </div>
+    </div>
+    <div class="ticker" id="ticker">
+      <div class="ticker-label" id="tickerLabel">Election night</div>
+      <div class="ticker-viewport"><div class="ticker-track" id="tickerTrack"></div></div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div>
+        <div class="kicker" id="heroKicker">US midterms · November 3, 2026</div>
+        <h1 id="headline">Who will control Congress?</h1>
+        <p class="dek" id="dek"></p>
+      </div>
+      <div class="ballot-stub" aria-live="polite">
+        <div class="stub-day" id="stubDay">3</div>
+        <div class="stub-month" id="stubMonth">Nov · 2026</div>
+        <div class="stub-status" id="stubStatus">—</div>
+      </div>
+    </section>
+
+    <div class="notice" id="notice"><span><strong id="noticeTitle">Connecting to live results…</strong> <span id="noticeDetail"></span></span><button id="dismissNotice" data-i18n="dismissNotice">Got it ×</button></div>
+
+    <section aria-labelledby="balanceTitle">
+      <div class="section-head">
+        <div><div class="kicker" data-i18n="balanceKicker">Balance of power</div><h2 class="section-title" id="balanceTitle" data-i18n="balanceTitle">Every seat in Congress</h2></div>
+        <div class="controls"><span class="updated" id="liveUpdated">—</span><button type="button" class="button" id="refreshLive"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 7v5h-5M4.9 9A7.5 7.5 0 0 1 18 6l2 2M4 17v-5h5m6.1 4A7.5 7.5 0 0 1 6 18l-2-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="refreshNow">Refresh</span></button><a class="button" id="officialResultsLink" href="https://apnews.com/hub/election-results" target="_blank" rel="noreferrer" data-i18n="officialResults">Full results ↗</a></div>
+      </div>
+      <div class="chambers">
+        <article class="panel chamber" id="senateChamber"></article>
+        <article class="panel chamber" id="houseChamber"></article>
+      </div>
+      <div class="seat-legend" id="seatLegend"></div>
+      <div class="stat-strip">
+        <div class="stat"><div class="stat-label" data-i18n="statGovernors">Governors</div><div class="stat-value" id="statGovernors">—</div><div class="stat-detail" id="statGovernorsDetail">—</div></div>
+        <div class="stat"><div class="stat-label" data-i18n="statCalled">Races called</div><div class="stat-value" id="statCalled">—</div><div class="stat-detail" id="statCalledDetail">—</div></div>
+        <div class="stat"><div class="stat-label" data-i18n="statFlips">Seats flipped</div><div class="stat-value" id="statFlips">—</div><div class="stat-detail" id="statFlipsDetail">—</div></div>
+        <div class="stat"><div class="stat-label" data-i18n="statVotes">House votes counted</div><div class="stat-value" id="statVotes">—</div><div class="stat-detail" id="statVotesDetail">—</div></div>
+      </div>
+      <div class="disclosure"><span data-i18n="preliminaryDisclosure">Counts are unofficial until each state certifies. A check mark means the AP has called the race.</span><span data-i18n="autoRefreshDisclosure">Updates automatically every 60 seconds.</span></div>
+    </section>
+
+    <section class="section content-grid" id="mapSection">
+      <article class="panel">
+        <div class="panel-head"><div><h2 class="panel-title" data-i18n="keyRacesTitle">Races to watch</h2><p class="panel-caption" data-i18n="keyRacesCaption">Toss-ups and leaning races, closest first</p></div><div class="segmented" role="group" aria-label="Office" data-i18n-aria="officeSelector" id="keyOffice"><button type="button" data-office="senate" aria-pressed="true" data-i18n="officeSenate">Senate</button><button type="button" data-office="governor" aria-pressed="false" data-i18n="officeGovernor">Governor</button><button type="button" data-office="house" aria-pressed="false" data-i18n="officeHouse">House</button></div></div>
+        <div class="key-races" id="keyRaces"></div>
+      </article>
+      <div class="right-stack">
+        <article class="panel">
+          <div class="panel-head"><div><h2 class="panel-title" data-i18n="mapTitle">State by state</h2><p class="panel-caption" id="mapCaption">—</p></div><div class="segmented" role="group" aria-label="Map office" data-i18n-aria="mapOfficeSelector" id="mapOffice"><button type="button" data-office="senate" aria-pressed="true" data-i18n="officeSenate">Senate</button><button type="button" data-office="governor" aria-pressed="false" data-i18n="officeGovernor">Governor</button></div></div>
+          <svg class="map-art" id="stateMap" viewBox="0 0 393 288" role="group" aria-label="Tile map of US states" data-i18n-aria="mapDescription"></svg>
+          <div class="map-legend" id="mapLegend"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2 class="panel-title" data-i18n="timelineTitle">When polls close</h2><p class="panel-caption" data-i18n="timelineCaption">Eastern time, election night</p></div></div>
+          <ol class="timeline" id="pollTimeline"></ol>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="raceSection">
+      <article class="panel">
+        <div class="panel-head"><div><h2 class="panel-title" data-i18n="raceTitle">Every race</h2><p class="panel-caption" data-i18n="raceCaption">Leading candidates, estimated vote counted, and race calls</p></div><div class="table-controls"><label class="searchbox"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.7"/><path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><input id="raceSearch" type="search" placeholder="State, district or candidate" aria-label="State, district or candidate" data-i18n-placeholder="searchRaces" data-i18n-aria="searchRaces"></label><select class="select" id="officeFilter" aria-label="Office" data-i18n-aria="officeSelector"><option value="senate" data-i18n="officeSenate">Senate</option><option value="house" data-i18n="officeHouse">House</option><option value="governor" data-i18n="officeGovernor">Governor</option></select><select class="select" id="partyFilter" aria-label="Filter by leading party" data-i18n-aria="filterParty"><option value="all" data-i18n="allParties">All parties</option><option value="DEM" data-i18n="partyDEM">Democrat</option><option value="GOP" data-i18n="partyGOP">Republican</option><option value="OTH" data-i18n="partyOther">Other</option></select><select class="select" id="statusFilter" aria-label="Filter by status" data-i18n-aria="filterStatus"><option value="all" data-i18n="allStatuses">All statuses</option><option value="called" data-i18n="statusCalled">Called</option><option value="uncalled" data-i18n="statusUncalled">Not yet called</option><option value="flip" data-i18n="statusFlip">Flips</option></select></div></div>
+        <div style="overflow-x:auto"><table class="race-table"><thead><tr><th data-i18n="tableRace">Race</th><th data-i18n="tableLeader">Leading candidate</th><th data-i18n="tableParty">Party</th><th data-i18n="tableShare">Share</th><th data-i18n="tableCounted">Counted</th><th data-i18n="tableStatus">Status</th></tr></thead><tbody id="raceRows"></tbody></table></div>
+        <button type="button" class="button table-more" id="showMore" hidden data-i18n="showMore">Show more races</button>
+        <div class="table-foot"><span id="raceCount"></span><span data-i18n="liveTableSource">Source: The New York Times · AP race calls · unofficial counts</span></div>
+      </article>
+    </section>
+
+    <section class="section" id="historySection">
+      <article class="panel">
+        <div class="panel-head"><div><h2 class="panel-title" data-i18n="historyTitle">Congress, over time</h2><p class="panel-caption" data-i18n="historyCaption">After each of the last four federal elections</p></div><div class="segmented" role="group" aria-label="Chart metric" data-i18n-aria="chartMetric" id="chartMode"><button type="button" data-mode="house" aria-pressed="true" data-i18n="chartHouse">House seats</button><button type="button" data-mode="senate" aria-pressed="false" data-i18n="chartSenate">Senate seats</button><button type="button" data-mode="vote" aria-pressed="false" data-i18n="chartVote">Popular vote</button></div></div>
+        <div class="chart-wrap">
+          <div class="legend" id="legend"></div>
+          <svg class="chart" id="historyChart" viewBox="0 0 560 210" role="img"></svg>
+          <p class="chart-note" id="chartNote"></p>
+        </div>
+      </article>
+    </section>
+
+    <!-- BEGIN AADS AD UNIT 2457602 -->
+    <div class="ad-slot" id="frame" style="width: 100%;margin: auto;position: relative; z-index: 9;">
+      <iframe data-aa='2457602' src='//acceptable.a-ads.com/2457602/?size=Adaptive'
+              style='border:0; padding:0; width:70%; height:auto; overflow:hidden;display: block;margin: auto'></iframe>
+    </div>
+    <!-- END AADS AD UNIT 2457602 -->
+
+    <footer class="footer"><span><span class="footer-brand">The Midterm Desk</span> · <span data-i18n="footerTitle">An independent election reference</span></span><span><span data-i18n="dataBy">Live data:</span> <a href="https://www.nytimes.com/interactive/2026/11/03/us/elections/results.html" target="_blank" rel="noreferrer">The New York Times</a> · <a href="https://apnews.com/hub/election-results" target="_blank" rel="noreferrer">AP</a></span><a href="https://toogreen.ca">toogreen.ca</a></footer>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const translations = {
+      en: {
+        documentTitle: 'The Midterm Desk · US 2026', brandHome: 'The Midterm Desk home', mainNavigation: 'Main navigation', languageSelector: 'Language',
+        navOverview: 'Overview', navRaces: 'Races', navMap: 'Map', navHistory: 'History',
+        themeToDark: 'Switch to dark mode', themeToLight: 'Switch to light mode',
+        heroKicker: 'US midterms · November 3, 2026', heroKickerReplay: 'Replay · {date}',
+        headlinePending: 'Who will <em>control</em> Congress?', headlineEarly: 'Too early <em>to call.</em>',
+        winsBoth: '<span class="{cls}">{party}</span> win the Senate <em>and</em> the House.', winsSenate: '<span class="{cls}">{party}</span> win the Senate.', winsHouse: '<span class="{cls}">{party}</span> win the House.',
+        senateOpen: 'Senate <em>still undecided.</em>', houseOpen: 'House <em>still undecided.</em>',
+        pluralDEM: 'Democrats', pluralGOP: 'Republicans', pluralOTH: 'Independents',
+        dekPending: 'All 435 House seats, 35 Senate seats and 36 governorships are on the ballot. Results appear here, live, the moment states begin reporting.',
+        dekLive: '{called} of {total} races called so far · {flips} seats have changed hands.', dekLiveOneFlip: '{called} of {total} races called so far · 1 seat has changed hands.',
+        stubCountdown: 'First polls close in <b>{time}</b>', stubClosing: 'Polls are closing. Results will appear shortly.', stubLive: 'Live results · updated every minute', stubReplay: 'Replaying past results',
+        tickerCalls: 'Latest calls', tickerPolls: 'Poll closings', tickerPollItem: 'Polls close', tickerAwaiting: 'Waiting for the first race calls…',
+        dismissNotice: 'Got it ×',
+        feedConnecting: 'Connecting', feedPending: 'Awaiting results', feedLive: 'Live', feedReplay: 'Replay', feedUnavailableShort: 'Feed down', feedDelayedShort: 'Delayed',
+        liveLoading: 'Connecting to live results…', pendingTitle: 'Live results start on election night.',
+        pendingDetail: 'The results feed opens on November 3 and this page picks it up automatically, no reload needed.', pollsClosing: 'Polls are closing; results will appear shortly.',
+        liveTitle: 'Unofficial results.', liveDetail: 'Counts update as states report. Winners are shown once the Associated Press calls a race.',
+        replayTitle: 'Replay mode:', replayDetail: 'showing results from {date} to preview how the desk works.', replayLink: 'Switch to 2026 →',
+        feedError: 'Live results are temporarily unavailable.', feedErrorDetail: 'Retrying automatically. You can also check AP for the latest.',
+        balanceKicker: 'Balance of power', balanceTitle: 'Every seat in Congress', refreshNow: 'Refresh', officialResults: 'Full results ↗', liveUpdatedAt: 'Updated {time} ET', waitingForUpdate: 'Waiting for first update',
+        balanceSenate: 'Senate', balanceHouse: 'House', toWin: '{n} to win', seatsTotal: '{n} seats', majority: 'majority',
+        legendWon: 'Won this year', legendHold: 'Not up this year', legendUndecided: 'Undecided', legendOther: 'Other',
+        houseNotePending: 'Each dot fills in as races are called.', calledOf: '{n} of {total} called',
+        statGovernors: 'Governors', statCalled: 'Races called', statFlips: 'Seats flipped', statVotes: 'House votes counted',
+        govOnBallot: '{n} races on the ballot', flipsDetail: 'Senate {s} · House {h} · Gov. {g}', calledDetail: 'Senate {s} · House {h}', notReporting: 'No votes reported yet', preliminary: 'Unofficial count',
+        preliminaryDisclosure: 'Counts are unofficial until each state certifies. A check mark means the AP has called the race.', autoRefreshDisclosure: 'Updates automatically every 60 seconds.',
+        keyRacesTitle: 'Races to watch', keyRacesCaption: 'Toss-ups and leaning races, closest first', officeSelector: 'Office', mapOfficeSelector: 'Map office',
+        officeSenate: 'Senate', officeHouse: 'House', officeGovernor: 'Governor',
+        keyRacesPending: 'Candidates and ratings arrive with the results feed on election night. On the ballot:', keyRacesPendingHouse: 'All 435 districts are on the ballot. Candidates and ratings arrive with the results feed on election night.', keyRacesEmpty: 'No competitive races in this list.',
+        loadingRows: 'Loading races…', retryRows: 'Could not load results. Retrying…',
+        votesIn: 'counted', called: 'Called', flip: 'Flip', leading: 'Leading', awaiting: 'Awaiting votes', uncontested: 'Uncontested', runoff: 'Runoff',
+        mapTitle: 'State by state', mapCaptionSenate: '{n} Senate races, by leading party', mapCaptionGovernor: '{n} governor races, by leading party',
+        mapDescription: 'Tile map of US states coloured by the party leading or winning each race', mapCalled: 'Called', mapLeading: 'Leading', mapNoVotes: 'No votes yet', mapNoRace: 'No race', mapFlip: 'Flip',
+        mapNoRaceTip: 'No race this year',
+        timelineTitle: 'When polls close', timelineCaption: 'Eastern time, election night', pollsClosed: 'Polls closed', pollsCloseIn: 'in {time}', statesCount: '{n} states', stateCountOne: '1 state',
+        raceTitle: 'Every race', raceCaption: 'Leading candidates, estimated vote counted, and race calls', searchRaces: 'State, district or candidate',
+        filterParty: 'Filter by leading party', allParties: 'All parties', partyOther: 'Other', filterStatus: 'Filter by status',
+        allStatuses: 'All statuses', statusCalled: 'Called', statusUncalled: 'Not yet called', statusFlip: 'Flips',
+        tableRace: 'Race', tableLeader: 'Leading candidate', tableParty: 'Party', tableShare: 'Share', tableCounted: 'Counted', tableStatus: 'Status',
+        liveTableSource: 'Source: The New York Times · AP race calls · unofficial counts',
+        pendingRows: 'Race-by-race results appear here once the feed opens on election night.',
+        noRacesMatch: 'No races match these filters.', raceCountOne: 'Showing 1 of {total} races', raceCountMany: 'Showing {shown} of {total} races', showMore: 'Show more races',
+        votes: 'votes', margin: 'margin', special: 'special', atLarge: 'at-large', incumbent: 'incumbent',
+        historyTitle: 'Congress, over time', historyCaption: 'After each of the last four federal elections', chartMetric: 'Chart metric',
+        chartHouse: 'House seats', chartSenate: 'Senate seats', chartVote: 'Popular vote',
+        chartNoteSeats: 'Seats after each election. Senate independents shown separately; all caucused with Democrats. Sources: Clerk of the House, Senate Historical Office.',
+        chartNoteVote: 'National House popular vote, rounded. Source: Clerk of the House.',
+        chartAria: '{metric} by party after the 2018, 2020, 2022 and 2024 elections', majorityLine: 'Majority',
+        partyDEM: 'Democrat', partyGOP: 'Republican', partyIND: 'Independent', partyLIB: 'Libertarian', partyGRN: 'Green',
+        partyShortDEM: 'D', partyShortGOP: 'R',
+        ratingTossup: 'Toss-up', ratingLeanDem: 'Lean D', ratingLikelyDem: 'Likely D', ratingSolidDem: 'Solid D', ratingLeanRep: 'Lean R', ratingLikelyRep: 'Likely R', ratingSolidRep: 'Solid R',
+        footerTitle: 'An independent election reference', dataBy: 'Live data:',
+        dayShort: 'd', hourShort: 'h', minuteShort: 'min', stateFilterToast: 'Showing {office} races in {state}'
+      },
+      fr: {
+        documentTitle: 'Le bureau de mi-mandat · É.-U. 2026', brandHome: 'Accueil du bureau de mi-mandat', mainNavigation: 'Navigation principale', languageSelector: 'Langue',
+        navOverview: 'Aperçu', navRaces: 'Courses', navMap: 'Carte', navHistory: 'Historique',
+        themeToDark: 'Passer au mode sombre', themeToLight: 'Passer au mode clair',
+        heroKicker: 'Mi-mandat américain · 3 novembre 2026', heroKickerReplay: 'Reprise · {date}',
+        headlinePending: 'Qui <em>contrôlera</em> le Congrès?', headlineEarly: 'Trop tôt <em>pour se prononcer.</em>',
+        winsBoth: '<span class="{cls}">{party}</span> remportent le Sénat <em>et</em> la Chambre.', winsSenate: '<span class="{cls}">{party}</span> remportent le Sénat.', winsHouse: '<span class="{cls}">{party}</span> remportent la Chambre.',
+        senateOpen: 'Le Sénat <em>reste à décider.</em>', houseOpen: 'La Chambre <em>reste à décider.</em>',
+        pluralDEM: 'Les démocrates', pluralGOP: 'Les républicains', pluralOTH: 'Les indépendants',
+        dekPending: 'Les 435 sièges de la Chambre, 35 sièges au Sénat et 36 postes de gouverneur sont en jeu. Les résultats s’afficheront ici, en direct, dès que les États commenceront à publier.',
+        dekLive: '{called} courses annoncées sur {total} · {flips} sièges ont changé de parti.', dekLiveOneFlip: '{called} courses annoncées sur {total} · 1 siège a changé de parti.',
+        stubCountdown: 'Premiers bureaux fermés dans <b>{time}</b>', stubClosing: 'Les bureaux ferment. Les résultats arrivent sous peu.', stubLive: 'Résultats en direct · mis à jour chaque minute', stubReplay: 'Reprise de résultats passés',
+        tickerCalls: 'Dernières annonces', tickerPolls: 'Fermeture des bureaux', tickerPollItem: 'Fermeture', tickerAwaiting: 'En attente des premières annonces…',
+        dismissNotice: 'Compris ×',
+        feedConnecting: 'Connexion', feedPending: 'En attente', feedLive: 'En direct', feedReplay: 'Reprise', feedUnavailableShort: 'Flux indisponible', feedDelayedShort: 'Retard',
+        liveLoading: 'Connexion aux résultats en direct…', pendingTitle: 'Les résultats en direct commencent le soir de l’élection.',
+        pendingDetail: 'Le flux de résultats ouvre le 3 novembre et cette page le détecte automatiquement, sans recharger.', pollsClosing: 'Les bureaux ferment; les résultats arrivent sous peu.',
+        liveTitle: 'Résultats non officiels.', liveDetail: 'Les décomptes évoluent à mesure que les États publient. Un gagnant est indiqué lorsque l’Associated Press annonce la course.',
+        replayTitle: 'Mode reprise :', replayDetail: 'résultats du {date}, pour voir le fonctionnement du tableau.', replayLink: 'Passer à 2026 →',
+        feedError: 'Les résultats en direct sont temporairement indisponibles.', feedErrorDetail: 'Nouvel essai automatique. Consultez aussi l’AP pour les dernières données.',
+        balanceKicker: 'Rapport de force', balanceTitle: 'Chaque siège du Congrès', refreshNow: 'Actualiser', officialResults: 'Tous les résultats ↗', liveUpdatedAt: 'Mis à jour à {time} HE', waitingForUpdate: 'En attente de la première mise à jour',
+        balanceSenate: 'Sénat', balanceHouse: 'Chambre', toWin: '{n} pour gagner', seatsTotal: '{n} sièges', majority: 'majorité',
+        legendWon: 'Remportés cette année', legendHold: 'Pas en jeu cette année', legendUndecided: 'Non décidés', legendOther: 'Autre',
+        houseNotePending: 'Chaque point se remplit à mesure que les courses sont annoncées.', calledOf: '{n} sur {total} annoncées',
+        statGovernors: 'Gouverneurs', statCalled: 'Courses annoncées', statFlips: 'Sièges qui changent de parti', statVotes: 'Votes comptés (Chambre)',
+        govOnBallot: '{n} courses en jeu', flipsDetail: 'Sénat {s} · Chambre {h} · Gouv. {g}', calledDetail: 'Sénat {s} · Chambre {h}', notReporting: 'Aucun vote compté', preliminary: 'Décompte non officiel',
+        preliminaryDisclosure: 'Les décomptes sont non officiels jusqu’à la certification par chaque État. Un crochet indique que l’AP a annoncé la course.', autoRefreshDisclosure: 'Mise à jour automatique toutes les 60 secondes.',
+        keyRacesTitle: 'Courses à surveiller', keyRacesCaption: 'Courses serrées et indécises, les plus serrées en premier', officeSelector: 'Poste', mapOfficeSelector: 'Poste affiché sur la carte',
+        officeSenate: 'Sénat', officeHouse: 'Chambre', officeGovernor: 'Gouverneur',
+        keyRacesPending: 'Les candidats et les cotes arriveront avec le flux de résultats le soir de l’élection. En jeu :', keyRacesPendingHouse: 'Les 435 districts sont en jeu. Les candidats et les cotes arriveront avec le flux de résultats le soir de l’élection.', keyRacesEmpty: 'Aucune course serrée dans cette liste.',
+        loadingRows: 'Chargement des courses…', retryRows: 'Impossible de charger les résultats. Nouvel essai…',
+        votesIn: 'comptés', called: 'Annoncée', flip: 'Gain', leading: 'En tête', awaiting: 'En attente de votes', uncontested: 'Sans opposition', runoff: 'Second tour',
+        mapTitle: 'État par État', mapCaptionSenate: '{n} courses au Sénat, par parti en tête', mapCaptionGovernor: '{n} courses de gouverneur, par parti en tête',
+        mapDescription: 'Carte des États américains colorée selon le parti en tête ou gagnant', mapCalled: 'Annoncée', mapLeading: 'En tête', mapNoVotes: 'Aucun vote', mapNoRace: 'Pas de course', mapFlip: 'Gain',
+        mapNoRaceTip: 'Aucune course cette année',
+        timelineTitle: 'Fermeture des bureaux', timelineCaption: 'Heure de l’Est, soir de l’élection', pollsClosed: 'Bureaux fermés', pollsCloseIn: 'dans {time}', statesCount: '{n} États', stateCountOne: '1 État',
+        raceTitle: 'Toutes les courses', raceCaption: 'Candidats en tête, part estimée du vote compté et annonces', searchRaces: 'État, district ou candidat',
+        filterParty: 'Filtrer par parti en tête', allParties: 'Tous les partis', partyOther: 'Autre', filterStatus: 'Filtrer par statut',
+        allStatuses: 'Tous les statuts', statusCalled: 'Annoncées', statusUncalled: 'Non annoncées', statusFlip: 'Gains',
+        tableRace: 'Course', tableLeader: 'Candidat en tête', tableParty: 'Parti', tableShare: 'Part des voix', tableCounted: 'Compté', tableStatus: 'Statut',
+        liveTableSource: 'Source : The New York Times · annonces de l’AP · décomptes non officiels',
+        pendingRows: 'Les résultats par course s’afficheront ici dès l’ouverture du flux le soir de l’élection.',
+        noRacesMatch: 'Aucune course ne correspond aux filtres.', raceCountOne: '1 course affichée sur {total}', raceCountMany: '{shown} courses affichées sur {total}', showMore: 'Afficher plus de courses',
+        votes: 'voix', margin: 'écart', special: 'partielle', atLarge: 'siège unique', incumbent: 'sortant',
+        historyTitle: 'Le Congrès au fil du temps', historyCaption: 'Après chacune des quatre dernières élections fédérales', chartMetric: 'Mesure du graphique',
+        chartHouse: 'Sièges à la Chambre', chartSenate: 'Sièges au Sénat', chartVote: 'Vote populaire',
+        chartNoteSeats: 'Sièges après chaque élection. Les indépendants du Sénat sont affichés à part; tous siègent avec les démocrates. Sources : Clerk of the House, Senate Historical Office.',
+        chartNoteVote: 'Vote populaire national pour la Chambre, arrondi. Source : Clerk of the House.',
+        chartAria: '{metric} par parti après les élections de 2018, 2020, 2022 et 2024', majorityLine: 'Majorité',
+        partyDEM: 'Démocrate', partyGOP: 'Républicain', partyIND: 'Indépendant', partyLIB: 'Libertarien', partyGRN: 'Vert',
+        partyShortDEM: 'D', partyShortGOP: 'R',
+        ratingTossup: 'Indécis', ratingLeanDem: 'Penche D', ratingLikelyDem: 'Probable D', ratingSolidDem: 'Sûr D', ratingLeanRep: 'Penche R', ratingLikelyRep: 'Probable R', ratingSolidRep: 'Sûr R',
+        footerTitle: 'Référence électorale indépendante', dataBy: 'Données en direct :',
+        dayShort: 'j', hourShort: 'h', minuteShort: 'min', stateFilterToast: 'Courses ({office}) en {state}'
+      }
+    };
+
+    let language = (navigator.language || '').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+    try {
+      const savedLanguage = localStorage.getItem('us-midterms-language');
+      if (savedLanguage === 'en' || savedLanguage === 'fr') language = savedLanguage;
+    } catch {}
+
+    function translate(key, values = {}) {
+      const text = translations[language][key] || translations.en[key] || key;
+      return text.replace(/\{(\w+)\}/g, (match, name) => (name in values ? values[name] : match));
+    }
+
+    function applyLanguage() {
+      document.documentElement.lang = language;
+      document.title = translate('documentTitle');
+      document.querySelectorAll('[data-i18n]').forEach(element => {
+        element.textContent = translate(element.dataset.i18n);
+      });
+      document.querySelectorAll('[data-i18n-aria]').forEach(element => {
+        element.setAttribute('aria-label', translate(element.dataset.i18nAria));
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        element.setAttribute('placeholder', translate(element.dataset.i18nPlaceholder));
+      });
+      document.querySelectorAll('[data-language]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.language === language));
+      });
+      document.getElementById('brandName').innerHTML = language === 'fr' ? 'Le bureau de <b>mi-mandat</b>' : 'The Midterm <b>Desk</b>';
+    }
+
+    // ---- Theme -------------------------------------------------------------------------------
+    const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+    const sunIcon = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+    const moonIcon = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+    const isDark = () => document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && darkQuery.matches);
+
+    function renderThemeToggle() {
+      const button = document.getElementById('themeToggle');
+      button.innerHTML = isDark() ? sunIcon : moonIcon;
+      button.setAttribute('aria-label', translate(isDark() ? 'themeToLight' : 'themeToDark'));
+      button.title = button.getAttribute('aria-label');
+      document.getElementById('themeColor').setAttribute('content', isDark() ? '#0e1117' : '#f4f0e6');
+    }
+
+    // ---- Election configuration -------------------------------------------------------------
+    // The New York Times publishes AP-sourced results as public JSON (CORS-enabled) for each office.
+    // The 2026 files go live on election night; until then they return 404 and the desk waits.
+    // Append ?date=2024-11-05 to replay a past general election with the same feed format.
+    const ELECTION_DATE = '2026-11-03';
+    const params = new URLSearchParams(location.search);
+    const requestedDate = params.get('date');
+    const feedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate || '') ? requestedDate : ELECTION_DATE;
+    const isReplay = feedDate !== ELECTION_DATE;
+    const feedBase = `https://static01.nyt.com/elections-assets/pages/data/${feedDate}/results-`;
+    const offices = ['senate', 'house', 'governor'];
+    const firstPollsClose = new Date('2026-11-03T23:00:00Z');
+    const nytResultsUrl = `https://www.nytimes.com/interactive/${feedDate.replace(/-/g, '/')}/us/elections/results.html`;
+
+    // Pre-election baseline so the page is useful before the feed opens.
+    const baseline = {
+      senate: { total: 100, toWin: 51, holdovers: { DEM: 34, GOP: 31 }, up: 35 },
+      house: { total: 435, toWin: 218, up: 435 },
+      governor: { up: 36 },
+      senateStates: ['AL','AK','AR','CO','DE','FL','GA','ID','IL','IA','KS','KY','LA','ME','MA','MI','MN','MS','MT','NE','NH','NJ','NM','NC','OH','OK','OR','RI','SC','SD','TN','TX','VA','WV','WY'],
+      governorStates: ['AL','AK','AZ','AR','CA','CO','CT','FL','GA','HI','ID','IL','IA','KS','ME','MD','MA','MI','MN','NE','NV','NH','NM','NY','OH','OK','OR','PA','RI','SC','SD','TN','TX','VT','WI','WY'],
+      pollClosings: [
+        ['2026-11-03T23:00:00Z', ['IN','KY']],
+        ['2026-11-04T00:00:00Z', ['FL','GA','NH','SC','VA','VT']],
+        ['2026-11-04T00:30:00Z', ['NC','OH','WV']],
+        ['2026-11-04T01:00:00Z', ['AL','CT','DE','IL','KS','MA','MD','ME','MI','MO','MS','ND','NJ','OK','PA','RI','TN','TX']],
+        ['2026-11-04T01:30:00Z', ['AR']],
+        ['2026-11-04T02:00:00Z', ['AZ','CO','IA','LA','MN','NE','NM','NY','SD','WI','WY']],
+        ['2026-11-04T03:00:00Z', ['ID','MT','NV','UT']],
+        ['2026-11-04T04:00:00Z', ['CA','OR','WA']],
+        ['2026-11-04T05:00:00Z', ['HI']],
+        ['2026-11-04T06:00:00Z', ['AK']]
+      ]
+    };
+
+    const stateNames = {
+      AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
+      FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine',
+      MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
+      NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon',
+      PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia',
+      WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming'
+    };
+    const stateNamesFr = { CA: 'Californie', FL: 'Floride', GA: 'Géorgie', HI: 'Hawaï', LA: 'Louisiane', NM: 'Nouveau-Mexique', NC: 'Caroline du Nord', ND: 'Dakota du Nord', PA: 'Pennsylvanie', SC: 'Caroline du Sud', SD: 'Dakota du Sud', VA: 'Virginie', WV: 'Virginie-Occidentale', DC: 'District de Columbia' };
+    const stateName = code => (language === 'fr' && stateNamesFr[code]) || stateNames[code] || code;
+
+    // Tile-grid positions [column, row].
+    const tileGrid = {
+      ME: [10,0], VT: [9,1], NH: [10,1],
+      WA: [0,2], ID: [1,2], MT: [2,2], ND: [3,2], MN: [4,2], IL: [5,2], WI: [6,2], MI: [7,2], NY: [8,2], RI: [9,2], MA: [10,2],
+      OR: [0,3], NV: [1,3], WY: [2,3], SD: [3,3], IA: [4,3], IN: [5,3], OH: [6,3], PA: [7,3], NJ: [8,3], CT: [9,3],
+      CA: [0,4], UT: [1,4], CO: [2,4], NE: [3,4], MO: [4,4], KY: [5,4], WV: [6,4], VA: [7,4], MD: [8,4], DE: [9,4],
+      AZ: [1,5], NM: [2,5], KS: [3,5], AR: [4,5], TN: [5,5], NC: [6,5], SC: [7,5],
+      OK: [3,6], LA: [4,6], MS: [5,6], AL: [6,6], GA: [7,6],
+      HI: [0,7], AK: [1,7], TX: [3,7], FL: [8,7]
+    };
+
+    const partyColors = { DEM: 'var(--dem)', GOP: 'var(--gop)', OTH: 'var(--oth)' };
+    const ratingOrder = { tossup: 0, 'lean-dem': 1, 'lean-rep': 1, 'likely-dem': 2, 'likely-rep': 2, 'solid-dem': 3, 'solid-rep': 3 };
+    const ratingKeys = { tossup: 'ratingTossup', 'lean-dem': 'ratingLeanDem', 'likely-dem': 'ratingLikelyDem', 'solid-dem': 'ratingSolidDem', 'lean-rep': 'ratingLeanRep', 'likely-rep': 'ratingLikelyRep', 'solid-rep': 'ratingSolidRep' };
+
+    const history = {
+      years: [2018, 2020, 2022, 2024],
+      house: { DEM: [235, 222, 213, 215], GOP: [199, 213, 222, 220], OTH: [1, 0, 0, 0] },
+      senate: { DEM: [45, 48, 49, 45], GOP: [53, 50, 49, 53], OTH: [2, 2, 2, 2] },
+      vote: { DEM: [53.4, 50.8, 47.8, 47.2], GOP: [44.8, 47.7, 50.6, 49.8], OTH: [1.8, 1.5, 1.6, 3.0] }
+    };
+
+    // ---- State -------------------------------------------------------------------------------
+    const feeds = { senate: null, house: null, governor: null };
+    const feedStatus = { senate: 'loading', house: 'loading', governor: 'loading' };
+    const races = { senate: [], house: [], governor: [] };
+    let liveRequestInProgress = false;
+    let keyOffice = 'senate';
+    let mapOffice = 'senate';
+    let chartMode = 'house';
+    let rowLimit = 60;
+    let refreshTimer;
+
+    const locale = () => (language === 'fr' ? 'fr-CA' : 'en-US');
+
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+    }
+
+    function formatNumber(value, digits = 0) {
+      return new Intl.NumberFormat(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(Number(value) || 0);
+    }
+
+    function formatPercent(value, digits = 1) {
+      return language === 'fr' ? `${formatNumber(value, digits)} %` : `${formatNumber(value, digits)}%`;
+    }
+
+    function formatCompact(value) {
+      return new Intl.NumberFormat(locale(), { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0);
+    }
+
+    function formatTimeET(date, withDay = false) {
+      return new Intl.DateTimeFormat(locale(), { ...(withDay ? { month: 'short', day: 'numeric' } : {}), hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }).format(date);
+    }
+
+    function formatDuration(ms) {
+      const minutes = Math.max(0, Math.floor(ms / 60000));
+      const days = Math.floor(minutes / 1440);
+      const hours = Math.floor((minutes % 1440) / 60);
+      const mins = minutes % 60;
+      if (days) return `${days} ${translate('dayShort')} ${hours} ${translate('hourShort')}`;
+      if (hours) return `${hours} ${translate('hourShort')} ${mins} ${translate('minuteShort')}`;
+      return `${mins} ${translate('minuteShort')}`;
+    }
+
+    function partyGroup(code) {
+      return code === 'DEM' || code === 'GOP' ? code : 'OTH';
+    }
+
+    function partyLabel(candidate) {
+      const key = `party${candidate.party}`;
+      if (translations.en[key]) return translate(key);
+      return candidate.partyName || candidate.party;
+    }
+
+    function displayDate(iso) {
+      const [year, month, day] = iso.split('-').map(Number);
+      return new Intl.DateTimeFormat(locale(), { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day)));
+    }
+
+    // ---- Feed parsing ------------------------------------------------------------------------
+    function normalizeRace(race, office, districtsPerState) {
+      const top = race.top_reporting_unit || (race.reporting_units || []).find(unit => unit.level === 'state') || {};
+      const metadata = race.candidate_metadata || {};
+      const winners = race.outcome?.won || [];
+      const state = top.state_postal || String(race.nyt_id || '').slice(0, 2);
+      const candidates = (top.candidates || []).map(candidate => {
+        const meta = metadata[candidate.nyt_id] || {};
+        return {
+          id: candidate.nyt_id,
+          name: [meta.first_name, meta.last_name].filter(Boolean).join(' ') || candidate.nyt_id,
+          lastName: meta.last_name || candidate.nyt_id,
+          party: meta.party?.nyt_id || 'OTH',
+          partyName: meta.party?.name || '',
+          caucus: meta.party_caucus?.nyt_id || null,
+          incumbent: Boolean(meta.incumbent),
+          order: Number(meta.order) || 99,
+          votes: Number(candidate.votes?.total) || 0,
+          won: winners.includes(candidate.nyt_id)
+        };
+      });
+      const totalVotes = Number(top.total_votes) || candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
+      candidates.forEach(candidate => { candidate.share = totalVotes ? 100 * candidate.votes / totalVotes : 0; });
+      candidates.sort((first, second) => (second.won - first.won) || (second.votes - first.votes) || (first.order - second.order));
+      const called = winners.length > 0;
+      const leader = called || totalVotes > 0 ? candidates[0] : null;
+      const runnerUp = leader ? candidates[1] || null : null;
+      const special = /special/i.test(race.type || '');
+      const atLarge = office === 'house' && districtsPerState[state] === 1;
+      const seat = race.seat_number || '';
+      const label = office === 'house' ? `${state}-${atLarge ? 'AL' : seat}` : stateName(state);
+      // Independents who caucus with a party count toward that party's colour.
+      const leaderGroup = leader ? partyGroup(leader.caucus || leader.party) : null;
+      const calledAt = called ? new Date(race.outcome?.winner_accepted_at?.[0] || race.updated_at || 0) : null;
+      return {
+        id: race.nyt_id, office, state, seat, label, special, atLarge,
+        description: race.seat_description || '',
+        rating: race.rating || null,
+        eevp: top.eevp == null ? null : Number(top.eevp),
+        totalVotes, candidates, leader, runnerUp, leaderGroup, called, calledAt,
+        margin: leader && runnerUp && totalVotes ? leader.share - runnerUp.share : null,
+        gained: called && race.outcome?.gained === true,
+        runoff: (race.outcome?.advanced_to_runoff || []).length > 0,
+        uncontested: Boolean(race.uncontested),
+        url: race.url || nytResultsUrl
+      };
+    }
+
+    function parseFeed(office, payload) {
+      const rawRaces = payload.races || [];
+      const districtsPerState = {};
+      rawRaces.forEach(race => {
+        const state = race.top_reporting_unit?.state_postal || String(race.nyt_id || '').slice(0, 2);
+        districtsPerState[state] = (districtsPerState[state] || 0) + 1;
+      });
+      races[office] = rawRaces.map(race => normalizeRace(race, office, districtsPerState))
+        .sort((first, second) => (office === 'house' ? first.state.localeCompare(second.state) : first.label.localeCompare(second.label, language)) || (Number(first.seat) || 0) - (Number(second.seat) || 0) || first.special - second.special);
+    }
+
+    function partyControl(office) {
+      const officeId = office === 'senate' ? 'S' : 'H';
+      return feeds[office]?.partyControlData?.results?.[0]?.offices?.[officeId] || null;
+    }
+
+    function liveState() {
+      const statuses = offices.map(office => feedStatus[office]);
+      if (statuses.some(status => status === 'ready')) return statuses.some(status => status === 'error') ? 'delayed' : 'ready';
+      if (statuses.every(status => status === 'pending')) return 'pending';
+      if (statuses.some(status => status === 'error')) return 'error';
+      return 'loading';
+    }
+
+    // ---- Tallies -----------------------------------------------------------------------------
+    function tally(list) {
+      const result = { called: 0, total: list.length, DEM: 0, GOP: 0, OTH: 0, flips: 0 };
+      list.forEach(race => {
+        if (!race.called) return;
+        result.called += 1;
+        result[race.leaderGroup] += 1;
+        if (race.gained) result.flips += 1;
+      });
+      return result;
+    }
+
+    function controlSeats(office) {
+      const control = partyControl(office);
+      const fromRaces = tally(races[office]);
+      if (control) {
+        const balance = control.party_balance || {};
+        const seats = party => Number(balance[party]?.seats) || 0;
+        const held = party => Number(balance[party]?.no_election) || 0;
+        const winner = ['DEM', 'GOP', 'OTH'].find(party => balance[party]?.winner === true) || null;
+        return {
+          total: Number(control.total) || baseline[office].total,
+          toWin: Number(control.to_win?.DEM) || baseline[office].toWin,
+          DEM: { seats: seats('DEM'), held: held('DEM') },
+          GOP: { seats: seats('GOP'), held: held('GOP') },
+          OTH: { seats: seats('OTH'), held: held('OTH') },
+          winner
+        };
+      }
+      const holdovers = office === 'senate' ? baseline.senate.holdovers : { DEM: 0, GOP: 0 };
+      const result = {
+        total: baseline[office].total,
+        toWin: baseline[office].toWin,
+        DEM: { seats: holdovers.DEM + fromRaces.DEM, held: holdovers.DEM },
+        GOP: { seats: holdovers.GOP + fromRaces.GOP, held: holdovers.GOP },
+        OTH: { seats: fromRaces.OTH, held: 0 }
+      };
+      result.winner = ['DEM', 'GOP'].find(party => result[party].seats >= result.toWin) || null;
+      return result;
+    }
+
+    // ---- Hemicycle ---------------------------------------------------------------------------
+    // Seats are laid out on concentric arcs, then ordered by angle so each party fills a wedge.
+    const layoutCache = {};
+    function hemicycleLayout(total, rows) {
+      const key = `${total}:${rows}`;
+      if (layoutCache[key]) return layoutCache[key];
+      const outer = 96;
+      const inner = outer * 0.5;
+      const radii = Array.from({ length: rows }, (_, index) => inner + (outer - inner) * index / (rows - 1));
+      const radiusSum = radii.reduce((sum, radius) => sum + radius, 0);
+      const counts = radii.map(radius => Math.round(total * radius / radiusSum));
+      let difference = total - counts.reduce((sum, count) => sum + count, 0);
+      for (let index = rows - 1; difference !== 0; index = (index - 1 + rows) % rows) {
+        counts[index] += Math.sign(difference);
+        difference -= Math.sign(difference);
+      }
+      const seats = [];
+      radii.forEach((radius, row) => {
+        const count = counts[row];
+        for (let index = 0; index < count; index += 1) {
+          const angle = Math.PI * (count === 1 ? 0.5 : index / (count - 1));
+          seats.push({ x: 100 - radius * Math.cos(angle), y: 100 - radius * Math.sin(angle), angle, row });
+        }
+      });
+      seats.sort((first, second) => first.angle - second.angle || first.row - second.row);
+      const dotRadius = Math.min((outer - inner) / (rows - 1), Math.PI * radiusSum / total) * 0.43;
+      return (layoutCache[key] = { seats, dotRadius, outer });
+    }
+
+    function renderChamber(office) {
+      const seats = controlSeats(office);
+      const layout = hemicycleLayout(seats.total, office === 'senate' ? 5 : 11);
+      const known = office === 'senate' || Boolean(feeds[office]);
+      const sequence = [
+        ['d-hold', seats.DEM.held], ['d-won', seats.DEM.seats - seats.DEM.held], ['o-won', seats.OTH.seats],
+        ['empty', Math.max(0, seats.total - seats.DEM.seats - seats.GOP.seats - seats.OTH.seats)],
+        ['r-won', seats.GOP.seats - seats.GOP.held], ['r-hold', seats.GOP.held]
+      ];
+      const classes = sequence.flatMap(([cls, count]) => Array(Math.max(0, count)).fill(cls));
+      const dots = layout.seats.map((seat, index) => `<circle class="seat ${classes[index] || 'empty'}" cx="${seat.x.toFixed(2)}" cy="${seat.y.toFixed(2)}" r="${layout.dotRadius.toFixed(2)}"/>`).join('');
+      const top = 100 - layout.outer;
+      const svg = `<svg viewBox="0 -9 200 112" role="img" aria-label="${escapeHTML(`${translate(office === 'senate' ? 'balanceSenate' : 'balanceHouse')}: ${translate('partyDEM')} ${seats.DEM.seats}, ${translate('partyGOP')} ${seats.GOP.seats}`)}">${dots}<line class="majority-tick" x1="100" y1="${top - 6}" x2="100" y2="${top - 1}"/><text class="majority-label" x="100" y="${top - 8}" text-anchor="middle">${escapeHTML(translate('toWin', { n: seats.toWin }))}</text></svg>`;
+      const winnerNote = seats.winner ? `<b class="${seats.winner === 'DEM' ? 'd' : 'r'}">${escapeHTML(translate(`plural${seats.winner}`))} · ${translate('majority')}</b>` : '';
+      const calledStats = tally(races[office]);
+      const foot = feeds[office]
+        ? `<div class="chamber-foot"><span>${translate('calledOf', { n: formatNumber(calledStats.called), total: formatNumber(calledStats.total) })}</span><span>${winnerNote}</span></div>`
+        : office === 'house' ? `<p class="chamber-note">${translate('houseNotePending')}</p>` : `<div class="chamber-foot"><span>${translate('calledOf', { n: '—', total: baseline.senate.up })}</span><span></span></div>`;
+      document.getElementById(`${office}Chamber`).innerHTML = `
+        <div class="chamber-head"><h3>${translate(office === 'senate' ? 'balanceSenate' : 'balanceHouse')}</h3><span>${translate('seatsTotal', { n: formatNumber(seats.total) })}</span></div>
+        <div class="hemicycle">${svg}<div class="hemicycle-score"><b class="d">${known ? formatNumber(seats.DEM.seats) : '—'}</b><i></i><b class="r">${known ? formatNumber(seats.GOP.seats) : '—'}</b></div></div>
+        ${foot}`;
+    }
+
+    function renderBalance() {
+      renderChamber('senate');
+      renderChamber('house');
+      document.getElementById('seatLegend').innerHTML = `<span><i style="background:var(--dem)"></i><i style="background:var(--gop)"></i>${translate('legendWon')}</span><span><i style="background:var(--dem-hold)"></i><i style="background:var(--gop-hold)"></i>${translate('legendHold')}</span><span><i style="background:var(--oth)"></i>${translate('legendOther')}</span><span><i style="background:var(--empty)"></i>${translate('legendUndecided')}</span>`;
+    }
+
+    function seatScore(dem, gop) {
+      return `<span class="d">${formatNumber(dem)}</span><span class="sep">–</span><span class="r">${formatNumber(gop)}</span>`;
+    }
+
+    function renderStats() {
+      const governor = tally(races.governor);
+      const senate = tally(races.senate);
+      const house = tally(races.house);
+      const anyData = offices.some(office => feeds[office]);
+
+      document.getElementById('statGovernors').innerHTML = feeds.governor ? seatScore(governor.DEM, governor.GOP) : `${formatNumber(baseline.governor.up)}`;
+      document.getElementById('statGovernorsDetail').textContent = feeds.governor
+        ? translate('calledOf', { n: formatNumber(governor.called), total: formatNumber(governor.total) })
+        : translate('govOnBallot', { n: baseline.governor.up });
+      const calledTotal = senate.called + house.called + governor.called;
+      const raceTotal = (senate.total || baseline.senate.up) + (house.total || baseline.house.up) + (governor.total || baseline.governor.up);
+      document.getElementById('statCalled').innerHTML = anyData ? `${formatNumber(calledTotal)} <small>/ ${formatNumber(raceTotal)}</small>` : `— <small>/ ${formatNumber(raceTotal)}</small>`;
+      document.getElementById('statCalledDetail').textContent = translate('calledDetail', { s: `${senate.called}/${senate.total || baseline.senate.up}`, h: `${house.called}/${house.total || baseline.house.up}` });
+      document.getElementById('statFlips').textContent = anyData ? formatNumber(senate.flips + house.flips + governor.flips) : '—';
+      document.getElementById('statFlipsDetail').textContent = translate('flipsDetail', { s: senate.flips, h: house.flips, g: governor.flips });
+      const houseVotes = races.house.reduce((sum, race) => sum + race.totalVotes, 0);
+      document.getElementById('statVotes').textContent = houseVotes ? formatCompact(houseVotes) : '—';
+      document.getElementById('statVotesDetail').textContent = houseVotes ? translate('preliminary') : translate('notReporting');
+    }
+
+    // ---- Hero & ticker -----------------------------------------------------------------------
+    function renderHero() {
+      const state = liveState();
+      const now = Date.now();
+      const hasData = offices.some(office => feeds[office]);
+      const headline = document.getElementById('headline');
+      const dek = document.getElementById('dek');
+      document.getElementById('heroKicker').textContent = isReplay ? translate('heroKickerReplay', { date: displayDate(feedDate) }) : translate('heroKicker');
+
+      if (!hasData) {
+        headline.innerHTML = translate('headlinePending');
+        dek.textContent = translate('dekPending');
+      } else {
+        const chamberLine = office => {
+          const winner = controlSeats(office).winner;
+          if (!feeds[office]) return translate(office === 'senate' ? 'senateOpen' : 'houseOpen');
+          return winner
+            ? translate(office === 'senate' ? 'winsSenate' : 'winsHouse', { party: escapeHTML(translate(`plural${winner}`)), cls: winner === 'DEM' ? 'd' : 'r' })
+            : translate(office === 'senate' ? 'senateOpen' : 'houseOpen');
+        };
+        const senateDecided = Boolean(controlSeats('senate').winner);
+        const houseDecided = Boolean(feeds.house && controlSeats('house').winner);
+        const senateWinner = controlSeats('senate').winner;
+        const sweep = senateDecided && houseDecided && senateWinner === controlSeats('house').winner;
+        headline.innerHTML = sweep
+          ? translate('winsBoth', { party: escapeHTML(translate(`plural${senateWinner}`)), cls: senateWinner === 'DEM' ? 'd' : 'r' })
+          : senateDecided || houseDecided ? `${chamberLine('senate')} ${chamberLine('house')}` : translate('headlineEarly');
+        const all = [...races.senate, ...races.house, ...races.governor];
+        const flipCount = all.filter(race => race.gained).length;
+        dek.textContent = translate(flipCount === 1 ? 'dekLiveOneFlip' : 'dekLive', { called: formatNumber(all.filter(race => race.called).length), total: formatNumber(all.length), flips: formatNumber(flipCount) });
+      }
+
+      const [, month, day] = feedDate.split('-').map(Number);
+      document.getElementById('stubDay').textContent = day;
+      document.getElementById('stubMonth').textContent = new Intl.DateTimeFormat(locale(), { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(feedDate.slice(0, 4)), month - 1, day)));
+      document.getElementById('stubStatus').innerHTML = isReplay ? translate('stubReplay')
+        : state === 'ready' || state === 'delayed' ? translate('stubLive')
+        : now < firstPollsClose.getTime() ? translate('stubCountdown', { time: formatDuration(firstPollsClose.getTime() - now) })
+        : translate('stubClosing');
+    }
+
+    function pollGroups() {
+      const source = offices.map(office => feeds[office]?.pollClosingTimes).find(list => Array.isArray(list) && list.length);
+      if (!source) return baseline.pollClosings.map(([time, states]) => [new Date(time), states]);
+      const grouped = {};
+      source.forEach(entry => {
+        const time = entry.poll_closing_time;
+        const state = entry.reporting_unit?.state_postal;
+        if (!time || !state || state === 'DC') return;
+        (grouped[time] = grouped[time] || []).push(state);
+      });
+      return Object.entries(grouped).map(([time, states]) => [new Date(time), states.sort()]).sort(([first], [second]) => first - second);
+    }
+
+    let lastTicker = '';
+    function renderTicker() {
+      const calls = [...races.senate, ...races.governor, ...races.house]
+        .filter(race => race.called && race.leader)
+        .sort((first, second) => (second.calledAt - first.calledAt) || (second.office === 'senate') - (first.office === 'senate'))
+        .slice(0, 16);
+      let label;
+      let items;
+      if (calls.length) {
+        label = translate('tickerCalls');
+        items = calls.map(race => {
+          const office = translate(race.office === 'senate' ? 'officeSenate' : race.office === 'house' ? 'officeHouse' : 'officeGovernor');
+          const time = race.calledAt && !Number.isNaN(race.calledAt.getTime()) ? `<time>${escapeHTML(formatTimeET(race.calledAt, isReplay))}</time>` : '';
+          return `<span class="tick"><i class="tick-dot" style="background:${partyColors[race.leaderGroup]}"></i><b>${escapeHTML(race.label)}</b> ${escapeHTML(office)} · ${escapeHTML(race.leader.name)}${race.gained ? ` <span class="flip-chip">${translate('flip')}</span>` : ''} ${time}</span>`;
+        });
+      } else if (offices.some(office => feeds[office])) {
+        label = translate('tickerCalls');
+        items = [`<span class="tick">${translate('tickerAwaiting')}</span>`];
+      } else {
+        label = translate('tickerPolls');
+        items = pollGroups().map(([date, states]) => `<span class="tick"><b>${formatTimeET(date)} ET</b> ${translate('tickerPollItem')} · ${escapeHTML(states.join(' · '))}</span>`);
+      }
+      const html = items.join('');
+      const key = `${label}|${html}`;
+      if (key === lastTicker) return;
+      lastTicker = key;
+      document.getElementById('tickerLabel').textContent = label;
+      const track = document.getElementById('tickerTrack');
+      // Duplicate the run so the marquee loops seamlessly.
+      track.innerHTML = html + html.replace(/class="tick"/g, 'class="tick" aria-hidden="true"');
+      track.style.setProperty('--ticker-duration', `${Math.max(30, items.length * 6)}s`);
+    }
+
+    // ---- Panels ------------------------------------------------------------------------------
+    function matchup(race) {
+      const dem = race.candidates.find(candidate => partyGroup(candidate.caucus || candidate.party) === 'DEM');
+      const gop = race.candidates.find(candidate => candidate.party === 'GOP');
+      const left = dem || race.candidates[0];
+      const right = gop && gop !== left ? gop : race.candidates.find(candidate => candidate !== left);
+      return [left, right].filter(Boolean);
+    }
+
+    function ratingBadge(rating) {
+      return rating && ratingKeys[rating] ? `<span class="rating ${rating}">${translate(ratingKeys[rating])}</span>` : '';
+    }
+
+    function raceStatusHTML(race) {
+      if (race.called) {
+        const flip = race.gained ? `<span class="flip-chip">${translate('flip')}</span>` : '';
+        return `<span class="status called-${race.leaderGroup.toLowerCase()}">${translate('called')}</span>${flip}`;
+      }
+      if (race.runoff) return `<span class="status">${translate('runoff')}</span>`;
+      if (race.uncontested) return `<span class="status">${translate('uncontested')}</span>`;
+      return `<span class="status">${translate(race.leader ? 'leading' : 'awaiting')}</span>`;
+    }
+
+    function renderKeyRaces() {
+      const container = document.getElementById('keyRaces');
+      document.querySelectorAll('#keyOffice button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.office === keyOffice)));
+      if (!feeds[keyOffice]) {
+        if (feedStatus[keyOffice] !== 'pending') {
+          container.innerHTML = `<p class="placeholder">${translate(feedStatus[keyOffice] === 'error' ? 'retryRows' : 'loadingRows')}</p>`;
+          return;
+        }
+        const ballotStates = baseline[`${keyOffice}States`];
+        container.innerHTML = ballotStates
+          ? `<p class="placeholder">${translate('keyRacesPending')}</p><div class="ballot-states">${ballotStates.map(stateName).sort((first, second) => first.localeCompare(second, language)).map(name => `<span>${escapeHTML(name)}</span>`).join('')}</div>`
+          : `<p class="placeholder">${translate('keyRacesPendingHouse')}</p>`;
+        return;
+      }
+      const competitive = races[keyOffice].filter(race => (ratingOrder[race.rating] ?? 3) <= 1 || (race.margin != null && race.margin < 5 && race.totalVotes > 0));
+      competitive.sort((first, second) => {
+        // Uncalled races first; within each group, counted races by margin, then not-yet-reporting by rating.
+        if (first.called !== second.called) return first.called - second.called;
+        const firstReporting = first.totalVotes > 0;
+        const secondReporting = second.totalVotes > 0;
+        if (firstReporting !== secondReporting) return secondReporting - firstReporting;
+        if (firstReporting) return (first.margin ?? 100) - (second.margin ?? 100);
+        return (ratingOrder[first.rating] ?? 3) - (ratingOrder[second.rating] ?? 3) || first.label.localeCompare(second.label);
+      });
+      const list = competitive.slice(0, keyOffice === 'house' ? 14 : 12);
+      if (!list.length) {
+        container.innerHTML = `<p class="placeholder">${translate('keyRacesEmpty')}</p>`;
+        return;
+      }
+      container.innerHTML = list.map(race => {
+        const [left, right] = matchup(race);
+        const color = candidate => (candidate ? partyColors[partyGroup(candidate.caucus || candidate.party)] : 'var(--empty)');
+        const share = candidate => (race.totalVotes && candidate ? `<b>${formatPercent(candidate.share)}</b>` : '');
+        const title = candidate => `${escapeHTML(candidate.name)} · ${escapeHTML(partyLabel(candidate))}`;
+        const leftName = left ? `<span class="${left.won ? 'winner' : ''}" title="${title(left)}">${escapeHTML(left.lastName)} ${share(left)}</span>` : '<span></span>';
+        const rightName = right ? `<span class="${right.won ? 'winner' : ''}" title="${title(right)}">${share(right)} ${escapeHTML(right.lastName)}</span>` : '<span></span>';
+        const status = race.called
+          ? `${translate('called')}${race.gained ? `<br><span class="flip-chip">${translate('flip')}</span>` : `<small>${race.eevp != null ? `${formatNumber(race.eevp)}% ${translate('votesIn')}` : ''}</small>`}`
+          : race.eevp != null && race.totalVotes ? `${formatNumber(race.eevp)}%<small>${translate('votesIn')}</small>` : `—<small>${translate('awaiting')}</small>`;
+        return `<div class="key-race">
+          <div class="key-race-name"><a href="${escapeHTML(race.url)}" target="_blank" rel="noreferrer">${escapeHTML(race.label)}</a>${race.special ? ` <span class="race-sub">(${translate('special')})</span>` : ''}<br>${ratingBadge(race.rating)}</div>
+          <div class="key-race-matchup"><div class="matchup-names">${leftName}${rightName}</div><div class="tug"><span style="width:${left ? left.share : 0}%;background:${color(left)}"></span><span style="flex:1"></span><span style="width:${right ? right.share : 0}%;background:${color(right)}"></span></div></div>
+          <div class="key-race-status">${status}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderMap() {
+      document.querySelectorAll('#mapOffice button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.office === mapOffice)));
+      const list = races[mapOffice];
+      const byState = {};
+      list.forEach(race => {
+        // With two races in one state (regular + special), show the less settled one.
+        const existing = byState[race.state];
+        if (!existing || (existing.called && !race.called)) byState[race.state] = race;
+      });
+      const statesWithRace = new Set(feeds[mapOffice] ? Object.keys(byState) : baseline[`${mapOffice}States`]);
+      const size = 32;
+      const gap = 3;
+      let markup = '';
+      Object.entries(tileGrid).forEach(([code, [column, row]]) => {
+        const x = column * (size + gap) + 4;
+        const y = row * (size + gap) + 4;
+        const race = byState[code];
+        const hasRace = statesWithRace.has(code);
+        let cls = 'tile';
+        let tip = `${stateName(code)} · ${translate('mapNoRaceTip')}`;
+        let flipMark = '';
+        if (hasRace) {
+          cls += ' has-race';
+          tip = `${stateName(code)} · ${translate('awaiting')}`;
+          if (race?.leader) {
+            cls += ` ${race.called ? 'call' : 'lead'}-${race.leaderGroup}`;
+            tip = `${stateName(code)} · ${race.leader.name} (${partyLabel(race.leader)}) ${formatPercent(race.leader.share)} · ${race.called ? translate('called') : `${formatNumber(race.eevp)}% ${translate('votesIn')}`}${race.gained ? ` · ${translate('flip')}` : ''}`;
+            if (race.gained) flipMark = `<circle class="flip-mark" cx="${x + size - 5}" cy="${y + 5}" r="3.4"/>`;
+          }
+        }
+        markup += `<g class="${cls}" data-state="${code}" ${hasRace ? 'tabindex="0" role="button"' : ''} aria-label="${escapeHTML(tip)}"><rect x="${x}" y="${y}" width="${size}" height="${size}" rx="2"><title>${escapeHTML(tip)}</title></rect><text x="${x + size / 2}" y="${y + size / 2 + 3}" text-anchor="middle">${code}</text>${flipMark}</g>`;
+      });
+      document.getElementById('stateMap').innerHTML = markup;
+      document.getElementById('mapCaption').textContent = translate(mapOffice === 'senate' ? 'mapCaptionSenate' : 'mapCaptionGovernor', { n: formatNumber(feeds[mapOffice] ? list.length : statesWithRace.size) });
+      document.getElementById('mapLegend').innerHTML = `<span><i style="background:var(--dem)"></i><i style="background:var(--gop)"></i>${translate('mapCalled')}</span><span><i style="background:var(--dem-soft);border:1px solid var(--dem)"></i><i style="background:var(--gop-soft);border:1px solid var(--gop)"></i>${translate('mapLeading')}</span><span><i style="background:var(--flip);border-radius:50%"></i>${translate('mapFlip')}</span><span><i style="background:var(--surface);border:1px solid var(--line-strong)"></i>${translate('mapNoVotes')}</span><span><i style="background:var(--empty)"></i>${translate('mapNoRace')}</span>`;
+    }
+
+    function renderTimeline() {
+      const now = Date.now();
+      const groups = pollGroups();
+      const nextIndex = isReplay ? -1 : groups.findIndex(([date]) => date.getTime() > now);
+      document.getElementById('pollTimeline').innerHTML = groups.map(([date, states], index) => {
+        const closed = isReplay || date.getTime() <= now;
+        const detail = closed ? translate('pollsClosed') : translate('pollsCloseIn', { time: formatDuration(date.getTime() - now) });
+        const count = states.length === 1 ? translate('stateCountOne') : translate('statesCount', { n: states.length });
+        return `<li class="${closed ? 'closed' : index === nextIndex ? 'next' : ''}"><time>${formatTimeET(date)}</time><div><strong>${escapeHTML(states.join(' · '))}</strong><p>${count} · ${detail}</p></div></li>`;
+      }).join('');
+    }
+
+    function renderRaceRows() {
+      const office = document.getElementById('officeFilter').value;
+      const query = document.getElementById('raceSearch').value.trim().toLocaleLowerCase();
+      const party = document.getElementById('partyFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      const rows = document.getElementById('raceRows');
+      const moreButton = document.getElementById('showMore');
+      moreButton.hidden = true;
+      if (!feeds[office]) {
+        const key = feedStatus[office] === 'error' ? 'retryRows' : feedStatus[office] === 'loading' ? 'loadingRows' : 'pendingRows';
+        rows.innerHTML = `<tr><td class="empty" colspan="6">${translate(key)}</td></tr>`;
+        document.getElementById('raceCount').textContent = '';
+        return;
+      }
+      const all = races[office];
+      const visible = all.filter(race => {
+        const haystack = `${race.label} ${race.state} ${stateNames[race.state] || ''} ${stateName(race.state)} ${race.description} ${race.candidates.map(candidate => candidate.name).join(' ')}`.toLocaleLowerCase();
+        if (query && !haystack.includes(query)) return false;
+        if (party !== 'all' && race.leaderGroup !== party) return false;
+        if (status === 'called' && !race.called) return false;
+        if (status === 'uncalled' && race.called) return false;
+        if (status === 'flip' && !race.gained) return false;
+        return true;
+      });
+      const shown = visible.slice(0, rowLimit);
+      rows.innerHTML = shown.length ? shown.map(race => {
+        const leader = race.leader;
+        const group = race.leaderGroup || 'OTH';
+        const subtitle = [race.special ? translate('special') : '', race.atLarge ? translate('atLarge') : '', office === 'house' ? race.description : ''].filter(Boolean).join(' · ');
+        const leaderCell = leader
+          ? `${escapeHTML(leader.name)}${leader.won ? ' ✓' : ''}<div class="race-sub">${leader.incumbent ? `${translate('incumbent')} · ` : ''}${formatNumber(leader.votes)} ${translate('votes')}</div>`
+          : `<span class="race-sub">${escapeHTML(race.candidates.map(candidate => candidate.name).slice(0, 2).join(' · ') || translate('awaiting'))}</span>`;
+        const shareCell = leader && race.totalVotes
+          ? `<span class="num">${formatPercent(leader.share)}</span>${race.margin != null ? `<div class="race-sub">+${formatNumber(race.margin, 1)} ${translate('margin')}</div>` : ''}`
+          : '—';
+        const counted = race.eevp != null && race.totalVotes ? `<span class="num">${formatNumber(race.eevp)}%</span>` : '—';
+        return `<tr><td><div class="race-name"><a href="${escapeHTML(race.url)}" target="_blank" rel="noreferrer">${escapeHTML(race.label)}</a></div>${subtitle ? `<div class="race-sub">${escapeHTML(subtitle)}</div>` : ''}</td><td>${leaderCell}</td><td>${leader ? `<span class="party-tag"><i style="background:${partyColors[group]}"></i>${escapeHTML(partyLabel(leader))}</span>` : '—'}</td><td>${shareCell}</td><td>${counted}</td><td>${raceStatusHTML(race)}</td></tr>`;
+      }).join('') : `<tr><td class="empty" colspan="6">${translate('noRacesMatch')}</td></tr>`;
+      moreButton.hidden = visible.length <= rowLimit;
+      const countKey = shown.length === 1 ? 'raceCountOne' : 'raceCountMany';
+      document.getElementById('raceCount').textContent = translate(countKey, { shown: formatNumber(shown.length), total: formatNumber(visible.length) });
+    }
+
+    function renderChart() {
+      document.querySelectorAll('#chartMode button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === chartMode)));
+      const mode = chartMode;
+      const series = history[mode];
+      const maxValue = mode === 'house' ? 435 : 100;
+      const plot = { x: 40, y: 10, width: 500, height: 160 };
+      const barWidth = 70;
+      const groupWidth = plot.width / history.years.length;
+      const grid = mode === 'house' ? [0, 100, 200, 300, 435] : [0, 25, 50, 75, 100];
+      const order = ['DEM', 'OTH', 'GOP'];
+      const names = { DEM: translate('partyDEM'), GOP: translate('partyGOP'), OTH: mode === 'senate' ? translate('partyIND') : translate('partyOther') };
+      document.getElementById('legend').innerHTML = order.map(code => `<span><i style="background:${partyColors[code]}"></i>${names[code]}</span>`).join('') + (mode === 'vote' ? '' : `<span><i style="background:none;border-top:1.5px dashed var(--ink);height:0;border-radius:0"></i>${translate('majorityLine')}</span>`);
+      const yFor = value => plot.y + plot.height - (value / maxValue) * plot.height;
+      let markup = '';
+      grid.forEach(value => {
+        markup += `<line class="gridline" x1="${plot.x}" y1="${yFor(value)}" x2="${plot.x + plot.width}" y2="${yFor(value)}"/><text x="${plot.x - 8}" y="${yFor(value) + 3}" text-anchor="end">${mode === 'vote' ? `${value}%` : value}</text>`;
+      });
+      markup += `<line class="axisline" x1="${plot.x}" y1="${plot.y + plot.height}" x2="${plot.x + plot.width}" y2="${plot.y + plot.height}"/>`;
+      history.years.forEach((year, yearIndex) => {
+        const x = plot.x + groupWidth * yearIndex + (groupWidth - barWidth) / 2;
+        let yBottom = plot.y + plot.height;
+        order.forEach(code => {
+          const value = series[code][yearIndex];
+          if (!value) return;
+          const height = (value / maxValue) * plot.height;
+          yBottom -= height;
+          markup += `<rect x="${x}" y="${yBottom}" width="${barWidth}" height="${height}" style="fill:${partyColors[code]}"><title>${year} · ${names[code]}: ${mode === 'vote' ? formatPercent(value) : value}</title></rect>`;
+          if (height > 14) markup += `<text class="bar-label" x="${x + barWidth / 2}" y="${yBottom + height / 2 + 3.5}" text-anchor="middle">${mode === 'vote' ? formatNumber(value, 1) : value}</text>`;
+        });
+        markup += `<text class="year" x="${x + barWidth / 2}" y="${plot.y + plot.height + 22}" text-anchor="middle">${year}</text>`;
+      });
+      if (mode !== 'vote') {
+        const majority = mode === 'house' ? 218 : 51;
+        markup += `<line class="majority" x1="${plot.x}" y1="${yFor(majority)}" x2="${plot.x + plot.width}" y2="${yFor(majority)}"/>`;
+      }
+      const chart = document.getElementById('historyChart');
+      chart.innerHTML = markup;
+      const metric = translate(mode === 'house' ? 'chartHouse' : mode === 'senate' ? 'chartSenate' : 'chartVote');
+      chart.setAttribute('aria-label', translate('chartAria', { metric }));
+      document.getElementById('chartNote').textContent = translate(mode === 'vote' ? 'chartNoteVote' : 'chartNoteSeats');
+    }
+
+    function renderStatus() {
+      const state = liveState();
+      const notice = document.getElementById('notice');
+      document.getElementById('headerDot').className = `dot${state === 'ready' && !isReplay ? ' live' : ''}${state === 'error' ? ' error' : ''}`;
+      document.getElementById('headerFeedStatus').textContent = translate({ loading: 'feedConnecting', pending: 'feedPending', ready: isReplay ? 'feedReplay' : 'feedLive', delayed: 'feedDelayedShort', error: 'feedUnavailableShort' }[state]);
+
+      if (notice) {
+        const title = document.getElementById('noticeTitle');
+        const detail = document.getElementById('noticeDetail');
+        notice.classList.toggle('replay', isReplay);
+        if (isReplay) {
+          title.textContent = translate('replayTitle');
+          detail.innerHTML = `${escapeHTML(translate('replayDetail', { date: displayDate(feedDate) }))} <a href="${escapeHTML(location.pathname)}">${translate('replayLink')}</a>`;
+        } else if (state === 'pending') {
+          title.textContent = translate('pendingTitle');
+          detail.textContent = Date.now() < firstPollsClose.getTime() ? translate('pendingDetail') : translate('pollsClosing');
+        } else if (state === 'error' || state === 'delayed') {
+          title.textContent = translate('feedError');
+          detail.textContent = translate('feedErrorDetail');
+        } else if (state === 'loading') {
+          title.textContent = translate('liveLoading');
+          detail.textContent = '';
+        } else {
+          title.textContent = translate('liveTitle');
+          detail.textContent = translate('liveDetail');
+        }
+      }
+
+      const updatedValues = offices.map(office => feeds[office]?.resultsMeta?.resultsUpdatedAt).filter(Boolean).map(value => new Date(value)).filter(date => !Number.isNaN(date.getTime()));
+      const latest = updatedValues.sort((first, second) => second - first)[0];
+      document.getElementById('liveUpdated').textContent = latest ? translate('liveUpdatedAt', { time: formatTimeET(latest, true) }) : translate('waitingForUpdate');
+      document.getElementById('officialResultsLink').href = isReplay ? nytResultsUrl : 'https://apnews.com/hub/election-results';
+    }
+
+    function renderAll() {
+      renderStatus();
+      renderHero();
+      renderTicker();
+      renderBalance();
+      renderStats();
+      renderKeyRaces();
+      renderMap();
+      renderTimeline();
+      renderRaceRows();
+    }
+
+    // ---- Data loading ------------------------------------------------------------------------
+    async function loadOffice(office) {
+      const response = await fetch(`${feedBase}${office}.json`, { cache: 'no-store' });
+      // Missing objects return 403/404 from the storage bucket until the election-night files exist.
+      if (response.status === 404 || response.status === 403) return { office, status: 'pending' };
+      if (!response.ok) throw new Error(`${office} feed returned ${response.status}`);
+      const payload = await response.json();
+      if (!Array.isArray(payload.races)) throw new Error(`Unexpected ${office} feed format`);
+      return { office, status: 'ready', payload };
+    }
+
+    async function loadLiveResults() {
+      if (liveRequestInProgress) return;
+      liveRequestInProgress = true;
+      clearTimeout(refreshTimer);
+      const refreshButton = document.getElementById('refreshLive');
+      refreshButton.disabled = true;
+      refreshButton.classList.add('spinning');
+      const results = await Promise.allSettled(offices.map(loadOffice));
+      results.forEach((result, index) => {
+        const office = offices[index];
+        if (result.status === 'fulfilled' && result.value.status === 'ready') {
+          feeds[office] = result.value.payload;
+          feedStatus[office] = 'ready';
+          parseFeed(office, result.value.payload);
+        } else if (result.status === 'fulfilled') {
+          // Keep showing earlier data if a file briefly disappears mid-night.
+          feedStatus[office] = feeds[office] ? 'error' : 'pending';
+        } else {
+          feedStatus[office] = 'error';
+          console.error('Unable to refresh election results:', result.reason);
+        }
+      });
+      liveRequestInProgress = false;
+      refreshButton.disabled = false;
+      refreshButton.classList.remove('spinning');
+      renderAll();
+      scheduleRefresh();
+    }
+
+    function scheduleRefresh() {
+      // Poll every minute once results flow; check less often while waiting days ahead of the vote.
+      const waitingFarAhead = liveState() === 'pending' && Date.now() < firstPollsClose.getTime() - 6 * 3600000;
+      refreshTimer = setTimeout(loadLiveResults, waitingFarAhead ? 300000 : 60000);
+    }
+
+    let toastTimer;
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    function focusState(code) {
+      document.getElementById('officeFilter').value = mapOffice;
+      document.getElementById('raceSearch').value = stateName(code);
+      document.getElementById('partyFilter').value = 'all';
+      document.getElementById('statusFilter').value = 'all';
+      rowLimit = 60;
+      renderRaceRows();
+      document.getElementById('raceSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast(translate('stateFilterToast', { office: translate(mapOffice === 'senate' ? 'officeSenate' : 'officeGovernor').toLocaleLowerCase(), state: stateName(code) }));
+    }
+
+    // ---- Events ------------------------------------------------------------------------------
+    document.querySelectorAll('#chartMode button').forEach(button => button.addEventListener('click', () => { chartMode = button.dataset.mode; renderChart(); }));
+    ['raceSearch', 'officeFilter', 'partyFilter', 'statusFilter'].forEach(id => {
+      document.getElementById(id).addEventListener(id === 'raceSearch' ? 'input' : 'change', () => { rowLimit = 60; renderRaceRows(); });
+    });
+    document.getElementById('showMore').addEventListener('click', () => { rowLimit += 120; renderRaceRows(); });
+    document.getElementById('refreshLive').addEventListener('click', loadLiveResults);
+    document.getElementById('dismissNotice').addEventListener('click', () => document.getElementById('notice').remove());
+    document.querySelectorAll('#keyOffice button').forEach(button => button.addEventListener('click', () => { keyOffice = button.dataset.office; renderKeyRaces(); }));
+    document.querySelectorAll('#mapOffice button').forEach(button => button.addEventListener('click', () => { mapOffice = button.dataset.office; renderMap(); }));
+    const stateMap = document.getElementById('stateMap');
+    stateMap.addEventListener('click', event => {
+      const tile = event.target.closest('.tile.has-race');
+      if (tile) focusState(tile.dataset.state);
+    });
+    stateMap.addEventListener('keydown', event => {
+      const tile = event.target.closest('.tile.has-race');
+      if (tile && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); focusState(tile.dataset.state); }
+    });
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = isDark() ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem('us-midterms-theme', next); } catch {}
+      renderThemeToggle();
+    });
+    darkQuery.addEventListener('change', renderThemeToggle);
+    document.querySelectorAll('[data-language]').forEach(button => button.addEventListener('click', () => {
+      language = button.dataset.language;
+      try { localStorage.setItem('us-midterms-language', language); } catch {}
+      applyLanguage();
+      renderThemeToggle();
+      lastTicker = '';
+      offices.forEach(office => { if (feeds[office]) parseFeed(office, feeds[office]); });
+      renderChart();
+      renderAll();
+    }));
+    document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click', () => {
+      document.querySelector('.nav button.active').classList.remove('active');
+      button.classList.add('active');
+      document.getElementById(button.dataset.view).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    document.addEventListener('visibilitychange', () => {
+      // Catch up right away when someone returns to the tab on election night.
+      if (document.visibilityState === 'visible' && liveState() !== 'pending') loadLiveResults();
+    });
+    // Keep countdowns fresh between feed checks.
+    setInterval(() => { renderHero(); renderTimeline(); }, 30000);
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((error) => {
+          console.error('Service worker registration failed:', error);
+        });
+      });
+    }
+
+    applyLanguage();
+    renderThemeToggle();
+    renderChart();
+    renderAll();
+    loadLiveResults();
+  </script>
+</body>
+</html>

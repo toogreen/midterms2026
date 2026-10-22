@@ -1,0 +1,26 @@
+{
+  "name": "The Midterm Desk · US 2026",
+  "short_name": "Midterm Desk",
+  "description": "A fast election desk for the 2026 US midterms: Senate, House and governor races with live results.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f0e6",
+  "theme_color": "#f4f0e6",
+  "orientation": "portrait",
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
